@@ -202,8 +202,8 @@ static int receive_status(struct packet_reader *reader, struct ref *refs)
 		}
 		if (msg)
 			hint->remote_status = xstrdup(msg);
-		else if (extended_status)
-			hint->remote_status = xstrdup(extended_status);
+		else
+			hint->remote_status = xstrdup_or_null(extended_status);
 		/* start our next search from the next ref */
 		hint = hint->next;
 	}
