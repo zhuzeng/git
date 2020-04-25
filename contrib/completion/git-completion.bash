@@ -2223,9 +2223,18 @@ _git_switch ()
 		__gitcomp_builtin switch
 		;;
 	*)
+		local track_opt="--track" only_local_ref=n
+
+		# --orphan is used to create a branch disconnected from the
+		# current history, based on the empty tree. Since the only
+		# option required is the branch name, it doesn't make sense to
+		# complete anything here.
+		if [ -n "$(__git_find_on_cmdline "--orphan")" ]; then
+			return
+		fi
+
 		# check if --track, --no-track, or --no-guess was specified
 		# if so, disable DWIM mode
-		local track_opt="--track" only_local_ref=n
 		if [ "$GIT_COMPLETION_CHECKOUT_NO_GUESS" = "1" ] ||
 		   [ -n "$(__git_find_on_cmdline "--track --no-track --no-guess")" ]; then
 			track_opt=''
