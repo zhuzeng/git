@@ -2291,7 +2291,7 @@ _git_switch ()
 
 		# Certain combinations of options also disable this DWIM mode,
 		# so we should not complete such names in these cases.
-		if [ -n "$(__git_find_on_cmdline "--track --no-track --no-guess -d --detach")" ]; then
+		if [ -n "$(__git_find_on_cmdline "--track --no-track --no-guess -d --detach -c -C")" ]; then
 			dwim_opt=''
 		fi
 
@@ -2299,7 +2299,7 @@ _git_switch ()
 		# local branches, or DWIM with remote branch names. However,
 		# certain options for creating branches or detaching should
 		# complete all references.
-		if [ -n "$(__git_find_on_cmdline "-d --detach")" ]; then
+		if [ -n "$(__git_find_on_cmdline "-d --detach -c -C")" ]; then
 			mode="refs"
 		fi
 
