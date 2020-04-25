@@ -624,6 +624,19 @@ __git_heads ()
 			"refs/heads/$cur_*" "refs/heads/$cur_*/**"
 }
 
+# Lists branches from remote repositories.
+# 1: A prefix to be added to each listed branch (optional).
+# 2: List only branches matching this word (optional; list all branches if
+#    unset or empty).
+# 3: A suffix to be appended to each listed branch (optional).
+__git_remote_heads ()
+{
+	local pfx="${1-}" cur_="${2-}" sfx="${3-}"
+
+	__git for-each-ref --format="${pfx//\%/%%}%(refname:strip=2)$sfx" \
+			"refs/remotes/$cur_*" "refs/remotes/$cur_*/**"
+}
+
 # Lists tags from the local repository.
 # Accepts the same positional parameters as __git_heads() above.
 __git_tags ()
@@ -783,8 +796,9 @@ __git_refs ()
 # --sfx=<suffix>: A suffix to be appended to each ref instead of the default
 #                 space.
 # --mode=<mode>: What set of refs to complete, one of 'refs' (the default) to
-#                complete all refs, or 'heads' to complete only branches. Note
-#                that --remote is only compatible with --mode=refs.
+#                complete all refs, 'heads' to complete only branches, or
+#                'remote-heads' to complete only remote branches. Note that
+#                --remote is only compatible with --mode=refs.
 __git_complete_refs ()
 {
 	local remote dwim pfx cur_="$cur" sfx=" " mode="refs"
@@ -810,6 +824,8 @@ __git_complete_refs ()
 			__gitcomp_direct "$(__git_refs "$remote" "" "$pfx" "$cur_" "$sfx")" ;;
 		heads)
 			__gitcomp_direct "$(__git_heads "$pfx" "$cur_" "$sfx")" ;;
+		remote-heads)
+			__gitcomp_direct "$(__git_remote_heads "$pfx" "$cur_" "$sfx")" ;;
 		*)
 			return 1 ;;
 	esac
@@ -2299,8 +2315,13 @@ _git_switch ()
 		# local branches, or DWIM with remote branch names. However,
 		# certain options for creating branches or detaching should
 		# complete all references.
+		#
+		# Additionally, if --track is provided on its own, we should
+		# complete only remote branch names.
 		if [ -n "$(__git_find_on_cmdline "-d --detach -c -C")" ]; then
 			mode="refs"
+		elif [ -n "$(__git_find_on_cmdline "--track")" ]; then
+			mode="remote-heads"
 		fi
 
 		__git_complete_refs $dwim_opt --mode=$mode

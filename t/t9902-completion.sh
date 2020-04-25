@@ -1267,10 +1267,7 @@ test_expect_success 'git switch - with --detach, complete all references' '
 	EOF
 '
 
-# TODO: Since --track on its own will perform a DWIM to extract the local
-# branch name, we should complete only the remote branches with their remote
-# name.
-test_expect_failure 'git switch - with --track, complete only remote branches' '
+test_expect_success 'git switch - with --track, complete only remote branches' '
 	test_completion "git switch --track " <<-\EOF
 	other/branch-in-other Z
 	other/master-in-other Z
