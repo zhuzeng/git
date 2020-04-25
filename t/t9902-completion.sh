@@ -1240,11 +1240,7 @@ test_expect_success '__git_complete_fetch_refspecs - fully qualified & prefix' '
 	test_cmp expected out
 '
 
-# TODO: git switch by default should only include local branches and anything which
-# would be understood by the DWIM logic. Currently it will complete most
-# references including pseudorefs like HEAD and FETCH_HEAD, as well as tags.
-# These should not be completed unless certain options have been enabled.
-test_expect_failure 'git switch - with no options, complete local branches and unique remote branch names for DWIM logic' '
+test_expect_success 'git switch - with no options, complete local branches and unique remote branch names for DWIM logic' '
 	test_completion "git switch " <<-\EOF
 	branch-in-other Z
 	master Z

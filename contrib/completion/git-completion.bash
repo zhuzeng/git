@@ -782,9 +782,12 @@ __git_refs ()
 #               word to be completed.
 # --sfx=<suffix>: A suffix to be appended to each ref instead of the default
 #                 space.
+# --mode=<mode>: What set of refs to complete, one of 'refs' (the default) to
+#                complete all refs, or 'heads' to complete only branches. Note
+#                that --remote is only compatible with --mode=refs.
 __git_complete_refs ()
 {
-	local remote dwim pfx cur_="$cur" sfx=" "
+	local remote dwim pfx cur_="$cur" sfx=" " mode="refs"
 
 	while test $# != 0; do
 		case "$1" in
@@ -795,13 +798,23 @@ __git_complete_refs ()
 		--pfx=*)	pfx="${1##--pfx=}" ;;
 		--cur=*)	cur_="${1##--cur=}" ;;
 		--sfx=*)	sfx="${1##--sfx=}" ;;
+		--mode=*)	mode="${1##--mode=}" ;;
 		*)		return 1 ;;
 		esac
 		shift
 	done
 
-	__gitcomp_direct "$(__git_refs "$remote" "" "$pfx" "$cur_" "$sfx")"
+	# complete references based on the specified mode
+	case "$mode" in
+		refs)
+			__gitcomp_direct "$(__git_refs "$remote" "" "$pfx" "$cur_" "$sfx")" ;;
+		heads)
+			__gitcomp_direct "$(__git_heads "$pfx" "$cur_" "$sfx")" ;;
+		*)
+			return 1 ;;
+	esac
 
+	# Append DWIM remote branch names if requested
 	if [ "$dwim" = "yes" ]; then
 		__gitcomp_direct_append "$(__git_dwim_remote_heads "$pfx" "$cur_" "$sfx")"
 	fi
@@ -2256,7 +2269,7 @@ _git_switch ()
 		__gitcomp_builtin switch
 		;;
 	*)
-		local dwim_opt="--dwim" only_local_ref=n
+		local dwim_opt="--dwim" mode="heads"
 
 		# --orphan is used to create a branch disconnected from the
 		# current history, based on the empty tree. Since the only
@@ -2266,29 +2279,31 @@ _git_switch ()
 			return
 		fi
 
-		# check if --track, --no-track, or --no-guess was specified
-		# if so, disable DWIM mode
-		if [ "$GIT_COMPLETION_CHECKOUT_NO_GUESS" = "1" ] ||
-		   [ -n "$(__git_find_on_cmdline "--track --no-track --no-guess")" ]; then
+		# By default, git switch will DWIM with remote branch names by
+		# allowing these to expand into creating a local tracking
+		# branch of the same name. Completion for this can be disabled
+		# via GIT_COMPLETION_CHECKOUT_NO_GUESS, unless the user
+		# explicitly asked this behavior with --guess
+		if [ "$GIT_COMPLETION_CHECKOUT_NO_GUESS" = "1" ] &&
+		   [ -z "$(__git_find_on_cmdline "--guess")" ]; then
 			dwim_opt=''
 		fi
-		# explicit --guess enables DWIM mode regardless of
-		# $GIT_COMPLETION_CHECKOUT_NO_GUESS
-		if [ -n "$(__git_find_on_cmdline "--guess")" ]; then
-			dwim_opt='--dwim'
+
+		# Certain combinations of options also disable this DWIM mode,
+		# so we should not complete such names in these cases.
+		if [ -n "$(__git_find_on_cmdline "--track --no-track --no-guess -d --detach")" ]; then
+			dwim_opt=''
 		fi
-		if [ -z "$(__git_find_on_cmdline "-d --detach")" ]; then
-			only_local_ref=y
-		else
-			# --guess --detach is invalid combination, no
-			# dwim will be done when --detach is specified
-			dwim_opt=
+
+		# By default, git switch will only allow switching between
+		# local branches, or DWIM with remote branch names. However,
+		# certain options for creating branches or detaching should
+		# complete all references.
+		if [ -n "$(__git_find_on_cmdline "-d --detach")" ]; then
+			mode="refs"
 		fi
-		if [ $only_local_ref = y -a -z "$dwim_opt" ]; then
-			__gitcomp_direct "$(__git_heads "" "$cur" " ")"
-		else
-			__git_complete_refs $dwim_opt
-		fi
+
+		__git_complete_refs $dwim_opt --mode=$mode
 		;;
 	esac
 }
