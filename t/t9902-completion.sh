@@ -1288,6 +1288,69 @@ test_expect_success 'git switch - with --no-track, complete only local branch na
 	EOF
 '
 
+# TODO: git switch completion does not yet support checking for -c, but it
+# should be able to complete all possible references. Based on a quick
+# examination of the switch/checkout code, -c will disable DWIM logic and thus
+# we should not complete unique remote branch names with -c or -C either.
+test_expect_failure 'git switch - with -c, complete all references' '
+	test_completion "git switch -c new-branch " <<-\EOF
+	HEAD Z
+	master Z
+	matching-branch Z
+	matching-tag Z
+	other/branch-in-other Z
+	other/master-in-other Z
+	EOF
+'
+
+test_expect_failure 'git switch - with -c, complete all references' '
+	test_completion "git switch -C new-branch " <<-\EOF
+	HEAD Z
+	master Z
+	matching-branch Z
+	matching-tag Z
+	other/branch-in-other Z
+	other/master-in-other Z
+	EOF
+'
+
+# TODO: ensure that the completion rules for -c override --track
+test_expect_failure 'git switch - with -c and --track, complete all references' '
+	test_completion "git switch -c new-branch --track " <<-EOF
+	HEAD Z
+	master Z
+	matching-branch Z
+	matching-tag Z
+	other/branch-in-other Z
+	other/master-in-other Z
+	EOF
+'
+
+# TODO: git switch with -c and --no-track should allow creating a branch using
+# any reference as a starting point. Because completion support does not
+# recognize -c or -C, this doesn't work yet.
+test_expect_failure 'git switch - with -c and --no-track, complete all references' '
+	test_completion "git switch -c new-branch --no-track " <<-\EOF
+	HEAD Z
+	master Z
+	matching-branch Z
+	matching-tag Z
+	other/branch-in-other Z
+	other/master-in-other Z
+	EOF
+'
+
+test_expect_failure 'git switch - with -C and --no-track, complete all references' '
+	test_completion "git switch -C new-branch --no-track " <<-\EOF
+	HEAD Z
+	master Z
+	matching-branch Z
+	matching-tag Z
+	other/branch-in-other Z
+	other/master-in-other Z
+	EOF
+'
+
 test_expect_success 'teardown after ref completion' '
 	git branch -d matching-branch &&
 	git tag -d matching-tag &&
