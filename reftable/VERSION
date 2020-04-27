@@ -1,0 +1,5 @@
+commit a6d6b31bea256044621d789df64a8159647f21bc
+Author: Han-Wen Nienhuys <hanwen@google.com>
+Date:   Mon Apr 27 20:46:21 2020 +0200
+
+    C: prefix error codes with REFTABLE_
