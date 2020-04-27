@@ -11,7 +11,7 @@ SRC=${SRC:-origin} BRANCH=${BRANCH:-origin/master}
 cp reftable-repo/c/*.[ch] reftable/
 cp reftable-repo/c/include/*.[ch] reftable/
 cp reftable-repo/LICENSE reftable/
-git --git-dir reftable-repo/.git show --no-patch origin/master \
+git --git-dir reftable-repo/.git show --no-patch ${BRANCH} \
   > reftable/VERSION
 
 mv reftable/system.h reftable/system.h~
