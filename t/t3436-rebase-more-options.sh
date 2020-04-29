@@ -137,22 +137,22 @@ test_expect_success '--committer-date-is-author-date works when committing confl
 # Checking for +0000 in author time is enough since default
 # timezone is UTC, but the timezone used while committing
 # sets to +0530.
-test_expect_success '--ignore-date works with apply backend' '
+test_expect_success '--reset-author-date works with apply backend' '
 	git commit --amend --date="$GIT_AUTHOR_DATE" &&
-	git rebase --apply --ignore-date HEAD^ &&
+	git rebase --apply --reset-author-date HEAD^ &&
 	git log -1 --pretty="format:%ai" >authortime &&
 	grep "+0000" authortime
 '
 
-test_expect_success '--ignore-date works with merge backend' '
+test_expect_success '--reset-author-date works with merge backend' '
 	git commit --amend --date="$GIT_AUTHOR_DATE" &&
-	git rebase --ignore-date -m HEAD^ &&
+	git rebase --reset-author-date -m HEAD^ &&
 	git log -1 --pretty="format:%ai" >authortime &&
 	grep "+0000" authortime
 '
 
-test_expect_success '--ignore-date works after conflict resolution' '
-	test_must_fail git rebase --ignore-date -m \
+test_expect_success '--reset-author-date works after conflict resolution' '
+	test_must_fail git rebase --reset-author-date -m \
 		--onto commit2^^ commit2^ commit2 &&
 	echo resolved >foo &&
 	git add foo &&
@@ -161,17 +161,17 @@ test_expect_success '--ignore-date works after conflict resolution' '
 	grep +0000 authortime
 '
 
-test_expect_success '--ignore-date works with rebase -r' '
+test_expect_success '--reset-author-date works with rebase -r' '
 	git checkout side &&
 	git merge --no-ff commit3 &&
-	git rebase -r --root --ignore-date &&
+	git rebase -r --root --reset-author-date &&
 	git log --pretty=%ai >authortime &&
 	! grep -v "+0000" authortime
 '
 
-test_expect_success '--ignore-date with --committer-date-is-author-date works' '
+test_expect_success '--reset-author-date with --committer-date-is-author-date works' '
 	test_must_fail git rebase -m --committer-date-is-author-date \
-		--ignore-date --onto commit2^^ commit2^ commit3 &&
+		--reset-author-date --onto commit2^^ commit2^ commit3 &&
 	git checkout --theirs foo &&
 	git add foo &&
 	git rebase --continue &&
@@ -181,15 +181,25 @@ test_expect_success '--ignore-date with --committer-date-is-author-date works' '
 	! grep -v "+0000" authortime
 '
 
-test_expect_success '--ignore-date --committer-date-is-author-date works when forking merge' '
+test_expect_success '--reset-author-date --committer-date-is-author-date works when forking merge' '
 	GIT_SEQUENCE_EDITOR="echo \"merge -C $(git rev-parse HEAD) commit3\">" \
-		git rebase -i --strategy=resolve --ignore-date \
+		git rebase -i --strategy=resolve --reset-author-date \
 		--committer-date-is-author-date side side &&
 	git log -1 --pretty=%ai >authortime &&
 	git log -1 --pretty=%ci >committertime &&
 	test_cmp authortime committertime &&
 	grep "+0000" authortime
  '
+
+test_expect_success '--ignore-date is an alias for --reset-author-date' '
+	git commit --amend --date="$GIT_AUTHOR_DATE" &&
+	git rebase --apply --ignore-date HEAD^ &&
+	git commit --allow-empty -m empty --date="$GIT_AUTHOR_DATE" &&
+	git rebase -m --ignore-date HEAD^ &&
+	git log -2 --pretty="format:%ai" >authortime &&
+	grep "+0000" authortime >output &&
+	test_line_count = 2 output
+'
 
 # This must be the last test in this file
 test_expect_success '$EDITOR and friends are unchanged' '
