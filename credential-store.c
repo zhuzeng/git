@@ -6,6 +6,32 @@
 
 static struct lock_file credential_lock;
 
+static char *redact_credential(const struct strbuf *line)
+{
+	struct strbuf redacted_line = STRBUF_INIT;
+	char *at = strchr(line->buf, '@');
+	char *colon;
+	int redacted = 0;
+
+	if (at) {
+		strbuf_addf(&redacted_line, "%.*s",
+			(int)(at - line->buf), line->buf);
+		colon = strrchr(redacted_line.buf, ':');
+		if (colon && *(colon + 1) != '/') {
+			redacted_line.len = colon - redacted_line.buf + 1;
+			strbuf_addstr(&redacted_line, "<redacted>");
+			strbuf_addstr(&redacted_line, at);
+			redacted = 1;
+		}
+		else
+			strbuf_reset(&redacted_line);
+	}
+	if (!redacted)
+		strbuf_addbuf(&redacted_line, line);
+
+	return redacted_line.buf;
+}
+
 static int parse_credential_file(const char *fn,
 				  struct credential *c,
 				  void (*match_cb)(struct credential *),
@@ -15,6 +41,7 @@ static int parse_credential_file(const char *fn,
 	struct strbuf line = STRBUF_INIT;
 	struct credential entry = CREDENTIAL_INIT;
 	int found_credential = 0;
+	int lineno = 0;
 
 	fh = fopen(fn, "r");
 	if (!fh) {
@@ -24,16 +51,24 @@ static int parse_credential_file(const char *fn,
 	}
 
 	while (strbuf_getline_lf(&line, fh) != EOF) {
-		credential_from_url(&entry, line.buf);
-		if (entry.username && entry.password &&
-		    credential_match(c, &entry)) {
-			found_credential = 1;
-			if (match_cb) {
-				match_cb(&entry);
-				break;
+		lineno++;
+		if (!credential_from_url_gently(&entry, line.buf, 1)) {
+			if (entry.username && entry.password &&
+				credential_match(c, &entry)) {
+				found_credential = 1;
+				if (match_cb) {
+					match_cb(&entry);
+					break;
+				}
 			}
 		}
-		else if (other_cb)
+		else {
+			char *redacted = redact_credential(&line);
+			warning("%s:%d %s: %s", fn, lineno,
+				 _("ignoring invalid credential"), redacted);
+			free(redacted);
+		}
+		if (!found_credential && other_cb)
 			other_cb(&line);
 	}
 
